@@ -1,0 +1,46 @@
+import asyncio
+import logging
+from aiogram import Bot, Dispatcher, F, types
+from aiogram.filters import Command
+from google import genai
+
+TELEGRAM_BOT_TOKEN = "8752853642:AAF0S_V75SqdLkzoCgODHCsRxKegVFtSknU"
+GEMINI_API_KEY = "AQ.Ab8RN6JhAn2GPAJauD1AYmhK2ygiwCzzXDjIe_72w24lSVOcWA"
+
+# Bot va Gemini mijozini ishga tushirish
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
+dp = Dispatcher()
+ai_client = genai.Client(api_key=GEMINI_API_KEY)
+
+# /start buyrug'i uchun javob
+@dp.message(Command("start"))
+async def start_handler(message: types.Message):
+    await message.answer(
+        "Salom! Men sun'iy intellektga ulangan botman. Menga istalgan savolni yuboring."
+    )
+
+# Matnli xabarlarni qabul qilib, sun'iy intellektga yuborish
+@dp.message(F.text)
+async def chat_with_ai(message: types.Message):
+    # Foydalanuvchiga bot o'ylayotganini bildirish uchun
+    await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+    
+    try:
+        # Gemini modeliga so'rov yuborish
+        response = ai_client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=message.text,
+        )
+        # Javobni foydalanuvchiga yuborish
+        await message.answer(response.text)
+    except Exception as e:
+        await message.answer(f"Xatolik yuz berdi: {e}")
+
+# Botni ishga tushirish
+async def main():
+    logging.basicConfig(level=logging.INFO)
+    print("Bot ishga tushdi...")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
